@@ -16,3 +16,7 @@ This might be nessecary if the exe file doesn't work for you since I built it fo
     ```bash
     pyinstaller main.py --icon=assets/icon.ico --onefile --name="[whatever_you_want]"
     ```
+    on debian linux:
+    ```bash
+    python3 -m PyInstaller main.py --icon=assets/icon.ico --onefile --name="[whatever_you_want]"F
+    ```

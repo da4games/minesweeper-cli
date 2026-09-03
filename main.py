@@ -3,12 +3,14 @@ from board import Board
 from rich.console import Console
 import re
 import os
+import math
 
 console = Console()
 rprint = console.print
 
-class Game():
-    def __init__(self, MIN_WIDTH: int, MIN_HEIGHT: int, MIN_MINES: int, MAX_MINES: int) -> None:
+
+class Game:
+    def __init__(self, MIN_WIDTH: int, MIN_HEIGHT: int, MINE_COUNT: int) -> None:
         self.MIN_WIDTH: int = MIN_WIDTH
         self.MIN_HEIGHT: int = MIN_HEIGHT
 
@@ -20,12 +22,12 @@ class Game():
         ):  # +2 because of status info and input line
             rprint(
                 f"Terminal is too small. "
-                f"Need at least {MIN_WIDTH}×{MIN_HEIGHT}, "
+                f"Need at least {MIN_WIDTH}×{MIN_HEIGHT + 2}, "
                 f"but got {console.width}×{console.height}."
             )
             raise SystemExit(1)
 
-        self.board = Board(self.MIN_WIDTH, self.MIN_HEIGHT, MIN_MINES, MAX_MINES)
+        self.board = Board(self.MIN_WIDTH, self.MIN_HEIGHT, MINE_COUNT)
 
     def alphabet_label(self, n):
         result = ""
@@ -34,19 +36,18 @@ class Game():
             result = chr(97 + remainder) + result
         return result
 
-
     def clear(self):
         os.system("cls" if os.name == "nt" else "clear")
 
-
     def rprint_board(self) -> None:
         board: Board = self.board
-        
+
         self.clear()
         rprint(
             "    "
             + "".join(
-                f"[bold cyan]{self.alphabet_label(i):<3}[/]" for i in range(1, self.MIN_WIDTH + 1)
+                f"[bold cyan]{self.alphabet_label(i):<3}[/]"
+                for i in range(1, self.MIN_WIDTH + 1)
             )
         )
         for j, list_y in enumerate(board.board):
@@ -90,19 +91,20 @@ class Game():
             rprint()
         rprint(f"  [red]¶ {len(board.flags)}/{len(board.mines)}[/]")
 
-
     def main(self) -> bool:
         board: Board = self.board
-        
+
         self.rprint_board()
 
         running: bool = True
         while running:
             raw_input: str = console.input()
-            
+
             if raw_input == "exit":
                 return False
-            
+            elif raw_input == "restart":
+                return True
+
             try:
                 command, coords_str = raw_input.split(" ")
                 match = re.fullmatch(r"([a-zA-Z]+)(\d+)", coords_str)
@@ -131,7 +133,7 @@ class Game():
                 board.dig(*coords)
             elif command == "f":
                 board.flag(*coords)
-            elif command == "discover":
+            if command == "discover":
                 for i in range(len(board.mask)):
                     for j in range(len(board.mask[i])):
                         board.mask[i][j] = 0
@@ -152,5 +154,14 @@ class Game():
 if __name__ == "__main__":
     play_again: bool = True
     while play_again:
-        g = Game(40, 20, 100, 200)
+        total_tiles: int = console.width * console.height - 2
+        mine_density: float = 0.12 + 0.05 * math.log2(total_tiles / 9)
+        min_mines: int = 1
+        max_mines: int = 200
+        mineCount = max(min_mines, min(max_mines, round(total_tiles * mine_density)))
+
+        g = Game(console.width // 3 - 2, console.height - 3, 100)
+        # //3 becuse of the two " " buffers in between each char
+        # -2 because of margin (and the numbers on the left side)
+        # -3 because we NEED -2 for the out- and input and then -1 for margin
         play_again = g.main()

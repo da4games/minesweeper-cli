@@ -3,15 +3,14 @@ import random
 
 class Board:
     def __init__(
-        self, MIN_WIDTH: int, MIN_HEIGHT: int, MIN_MINES: int, MAX_MINES: int
+        self, MIN_WIDTH: int, MIN_HEIGHT: int, MINE_COUNT: int
     ) -> None:
         self.MIN_WIDTH: int = MIN_WIDTH
         self.MIN_HEIGHT: int = MIN_HEIGHT
+        self.MINE_COUNT: int = MINE_COUNT
         self.board: list[list[int]] = []
         self.cells: list[tuple[int, int]] = []
         self.mask: list[list[int]] = []
-        self.MAX_MINES: int = MAX_MINES
-        self.MIN_MINES: int = MIN_MINES
         self.mines: set[tuple[int, int]] = set()  # might end up unused
         self.flags: set[tuple[int, int]] = set()
         
@@ -49,8 +48,7 @@ class Board:
         cells_copy: list[tuple[int, int]] = self.cells.copy()
         random.shuffle(cells_copy)
 
-        mine_count = random.randint(self.MIN_MINES, self.MAX_MINES)
-        mines: set[tuple[int, int]] = set(cells_copy[:mine_count])
+        mines: set[tuple[int, int]] = set(cells_copy[:self.MINE_COUNT])
 
         coordinate_set = set(cells_copy)
 

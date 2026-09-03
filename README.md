@@ -8,7 +8,6 @@ Thsi project is nothing more than a week long project to build minesweeper from 
 - using "discover" and any coordinates will uncover the whole board for debug puroses
 
 ## To build from source:
-This might be nessecary if the exe file doesn't work for you since I built it for ARM64 architecture and you might be runnign different hardware with a different architecture.
 1. Clone the repo in any way you like
     >It is reccomended to clone the latest release and not the repo itself (download the "Source code.zip")
 2. Extract the folder and open it in VSCode

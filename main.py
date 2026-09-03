@@ -157,7 +157,7 @@ if __name__ == "__main__":
         total_tiles: int = (console.width // 3 - 2) * (console.height - 3)
         mine_density: float = 0.05 * math.log2(total_tiles / 9)
         min_mines: int = 1
-        max_mines: int = 250
+        max_mines: int = 2500
         mine_count = round(5 * (total_tiles / 9) ** 0.75)
         mine_count = max(min_mines, min(max_mines, mine_count))
 

@@ -154,15 +154,26 @@ class Game:
 if __name__ == "__main__":
     play_again: bool = True
     while play_again:
-        total_tiles: int = (console.width // 3 - 2) * (console.height - 3)
+        size_str: str = console.input("Size[x, y] (leave empty for auto) ")
+        width: int
+        height: int
+        try:
+            x, y = size_str.split(" ")
+            width = int(x)
+            height = int(y)
+        except ValueError:
+            width = console.width // 3 - 1
+            height = console.height - 3
+            # //3 becuse of the two " " buffers in between each char
+            # -1 because of margin (and the numbers on the left side)
+            # -3 because we NEED -2 for the out- and input and then -1 for margin
+        
+        total_tiles: int = width * height
         mine_density: float = 0.05 * math.log2(total_tiles / 9)
         min_mines: int = 1
         max_mines: int = 2500
         mine_count = round(5 * (total_tiles / 9) ** 0.75)
         mine_count = max(min_mines, min(max_mines, mine_count))
 
-        g = Game(console.width // 3 - 2, console.height - 3, mine_count)
-        # //3 becuse of the two " " buffers in between each char
-        # -2 because of margin (and the numbers on the left side)
-        # -3 because we NEED -2 for the out- and input and then -1 for margin
+        g = Game(width, height, mine_count)
         play_again = g.main()

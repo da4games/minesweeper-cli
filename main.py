@@ -138,7 +138,7 @@ class Game:
                     for j in range(len(board.mask[i])):
                         board.mask[i][j] = 0
 
-            if board.board[coords[1]][coords[0]] == -1 and not command == "f":
+            if board.board[coords[1]][coords[0]] == -1 and command == "d":
                 for mine in board.mines:
                     board.mask[mine[1]][mine[0]] = 0
 

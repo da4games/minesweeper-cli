@@ -13,6 +13,6 @@ This might be nessecary if the exe file doesn't work for you since I built it fo
     >It is reccomended to clone the latest release and not the repo itself (download the "Source code.zip")
 2. Extract the folder and open it in VSCode
 3. Open a Terminal and execute:
-    `bash
-        pyinstaller main.py --icon=assets/icon.ico --onefile --name="[whatever_you_want]"
-    `
+    ```bash
+    pyinstaller main.py --icon=assets/icon.ico --onefile --name="[whatever_you_want]"
+    ```

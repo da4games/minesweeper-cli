@@ -3,126 +3,154 @@ from board import Board
 from rich.console import Console
 import re
 import os
-import time
 
 console = Console()
 rprint = console.print
 
-MIN_WIDTH: int = 40
-MIN_HEIGHT: int = 20
+class Game():
+    def __init__(self, MIN_WIDTH: int, MIN_HEIGHT: int, MIN_MINES: int, MAX_MINES: int) -> None:
+        self.MIN_WIDTH: int = MIN_WIDTH
+        self.MIN_HEIGHT: int = MIN_HEIGHT
 
-LIGHT_GREEN: str = "#c9ff8d"
-BEIGE: str = "#e5c29f"
+        self.LIGHT_GREEN: str = "#c9ff8d"
+        self.BEIGE: str = "#e5c29f"
 
-if console.width < MIN_WIDTH or console.height < MIN_HEIGHT:
-    rprint(
-        f"Terminal is too small. "
-        f"Need at least {MIN_WIDTH}×{MIN_HEIGHT}, "
-        f"but got {console.width}×{console.height}."
-    )
-    raise SystemExit(1)
+        if (
+            console.width < MIN_WIDTH or console.height < MIN_HEIGHT + 2
+        ):  # +2 because of status info and input line
+            rprint(
+                f"Terminal is too small. "
+                f"Need at least {MIN_WIDTH}×{MIN_HEIGHT}, "
+                f"but got {console.width}×{console.height}."
+            )
+            raise SystemExit(1)
+
+        self.board = Board(self.MIN_WIDTH, self.MIN_HEIGHT, MIN_MINES, MAX_MINES)
+
+    def alphabet_label(self, n):
+        result = ""
+        while n > 0:
+            n, remainder = divmod(n - 1, 26)
+            result = chr(97 + remainder) + result
+        return result
 
 
-def alphabet_label(n):
-    result = ""
-    while n > 0:
-        n, remainder = divmod(n - 1, 26)
-        result = chr(97 + remainder) + result
-    return result
+    def clear(self):
+        os.system("cls" if os.name == "nt" else "clear")
 
 
-def clear():
-    os.system("cls" if os.name == "nt" else "clear")
-
-
-def rprint_board(board: list[list[int]], mask: list[list[int]]) -> None:
-    clear()
-    rprint(
-        "    "
-        + "".join(
-            f"[bold cyan]{alphabet_label(i):<3}[/]" for i in range(1, MIN_WIDTH + 1)
+    def rprint_board(self) -> None:
+        board: Board = self.board
+        
+        self.clear()
+        rprint(
+            "    "
+            + "".join(
+                f"[bold cyan]{self.alphabet_label(i):<3}[/]" for i in range(1, self.MIN_WIDTH + 1)
+            )
         )
-    )
-    for j, list_y in enumerate(board):
-        rprint(f"{j:<4}", end="")
-        for i, cell in enumerate(list_y):
-            color: str = "white"
-            match cell:
-                case 0:
-                    color = BEIGE
-                    cell = "."
-                case 1:
-                    color = "blue"
-                case 2:
-                    color = "green"
-                case 3:
-                    color = "red"
-                case 4:
-                    color = "purple"
-                case 5:
-                    color = "dark_red"
-                case 6:
-                    color = "cyan"
-                case 7:
-                    color = "black"
-                case 8:
-                    color = "gray"
+        for j, list_y in enumerate(board.board):
+            rprint(f"{j:<4}", end="")
+            for i, cell in enumerate(list_y):
+                color: str = "white"
+                match cell:
+                    case 0:
+                        color = self.BEIGE
+                        cell = "."
+                    case 1:
+                        color = "blue"
+                    case 2:
+                        color = "green"
+                    case 3:
+                        color = "yellow"
+                    case 4:
+                        color = "dark_orange"
+                    case 5:
+                        color = "purple"
+                    case 6:
+                        color = "cyan"
+                    case 7:
+                        color = "black"
+                    case 8:
+                        color = "gray"
 
-            if mask[j][i] == 1:
-                rprint("#", end="  ", style=f"{LIGHT_GREEN}")
-            else:
+                if (i, j) in board.flags:
+                    rprint("[red]¶[/]", end="  ")  # ¶ looks kind of like a flag i think
+                elif board.mask[j][i] == 1:
+                    rprint("#", end="  ", style=f"{self.LIGHT_GREEN}")
+                else:
+                    rprint(
+                        (
+                            f"[{color}]" + str(cell) + "[/]"
+                            if not cell == -1
+                            else "[red bold]X[/]"
+                        ),
+                        end="  ",
+                    )
+            rprint()
+        rprint(f"  [red]¶ {len(board.flags)}/{len(board.mines)}[/]")
+
+
+    def main(self) -> bool:
+        board: Board = self.board
+        
+        self.rprint_board()
+
+        running: bool = True
+        while running:
+            raw_input: str = console.input()
+            
+            if raw_input == "exit":
+                return False
+            
+            try:
+                command, coords_str = raw_input.split(" ")
+                match = re.fullmatch(r"([a-zA-Z]+)(\d+)", coords_str)
+                if not match:
+                    raise ValueError
+
+            except ValueError:
+
+                self.rprint_board()
                 rprint(
-                    f"[{color}]" + str(cell) + "[/]" if not cell == -1 else "[red]X[/]",
-                    end="  ",
+                    "[red]Please enter a valide command like [reverse]'d r10'[/]. Use [reverse]'d'[/] for [reverse]dig[/] and [reverse]'f'[/] for placing a [reverse]flag[/] followed by coordinates.[/]"
                 )
-        rprint()
+                continue
+
+            letter, number = match.groups()
+
+            result: int = 0
+            for c in letter:
+                result = result * 26 + (ord(c) - ord("a") + 1)
+            coords: tuple[int, int] = (
+                result - 1,
+                int(number),
+            )  # -1 because we use list-based coordinates
+
+            if command == "d":
+                board.dig(*coords)
+            elif command == "f":
+                board.flag(*coords)
+            elif command == "discover":
+                for i in range(len(board.mask)):
+                    for j in range(len(board.mask[i])):
+                        board.mask[i][j] = 0
+
+            if board.board[coords[1]][coords[0]] == -1 and not command == "f":
+                for mine in board.mines:
+                    board.mask[mine[1]][mine[0]] = 0
+
+                self.rprint_board()
+
+                rprint("[red]GAME OVER[/]", end="")
+                console.input()
+                return True
+
+            self.rprint_board()
 
 
 if __name__ == "__main__":
-    board = Board(MIN_WIDTH, MIN_HEIGHT, 100, 300)
-
-    board.generate_board()
-    board.generate_mask()
-
-    rprint_board(board.board, board.mask)
-
-    running: bool = True
-    while running:
-        raw_input: str = console.input()
-        try:
-            command, coords_str = raw_input.split(" ")
-            match = re.fullmatch(r"([a-zA-Z]+)(\d+)", coords_str)
-            if not match:
-                raise ValueError
-
-        except ValueError:
-
-            rprint_board(board.board, board.mask)
-            rprint(
-                "[red]Please enter a valide command like [reverse]'d r10'[/]. Use [reverse]'d'[/] for [reverse]dig[/] and [reverse]'f'[/] for placing a [reverse]flag[/] followed by coordinates.[/]"
-            )
-            continue
-
-        letter, number = match.groups()
-
-        result: int = 0
-        for c in letter:
-            result = result * 26 + (ord(c) - ord("a") + 1)
-        coords: tuple[int, int] = (
-            result - 1,
-            int(number),
-        )  # -1 because we use list-based coordinates
-
-        if command == "d":
-            board.dig(*coords)
-        elif command == "f":
-            pass
-
-        if board.board[coords[1]][coords[0]] == -1:
-            rprint("[red]GAME OVER[/]")
-            rprint_board(board.board, board.mask)
-            raise SystemExit(1)
-
-        rprint_board(board.board, board.mask)
-
-        time.sleep(0.1)
+    play_again: bool = True
+    while play_again:
+        g = Game(40, 20, 100, 200)
+        play_again = g.main()

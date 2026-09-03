@@ -13,6 +13,10 @@ class Board:
         self.MAX_MINES: int = MAX_MINES
         self.MIN_MINES: int = MIN_MINES
         self.mines: set[tuple[int, int]] = set()  # might end up unused
+        self.flags: set[tuple[int, int]] = set()
+        
+        self.generate_board()
+        self.generate_mask()
 
     def neighbors(
         self, coords: tuple[int, int], set_of_coords: set[tuple[int, int]]
@@ -73,6 +77,9 @@ class Board:
         self.mask = mask
 
     def dig(self, x: int, y: int) -> None:
+        if (x, y) in self.flags:
+            return
+        
         self.mask[y][x] = 0
 
         board_cells = set(self.cells)
@@ -98,3 +105,9 @@ class Board:
                     and self.board[neighbor[1]][neighbor[0]] == 0
                 ):
                     queue.append(neighbor)
+    
+    def flag(self, x: int, y: int) -> None:
+        if not (x, y) in self.flags:
+            self.flags.add((x, y))
+        else:
+            self.flags.remove((x, y))

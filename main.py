@@ -106,47 +106,67 @@ class Game:
                 return True
 
             try:
-                command, coords_str = raw_input.split(" ")
-                match = re.fullmatch(r"([a-zA-Z]+)(\d+)", coords_str)
-                if not match:
+                command_l: list[str] = []
+                for char in raw_input:
+                    if char == " ":
+                        break
+                    command_l.append(char)
+                command: str = "".join(command_l)
+                coords_str: str = raw_input[1:]
+                coords_str_l: list[str] = coords_str.strip(" ").split(" ")
+                matches: list[re.Match[str]] = []
+                for i in coords_str_l:
+                    match = re.fullmatch(r"([a-zA-Z]+)(\d+)", i)
+                    if match:
+                        matches.append(match)
+
+                if not matches:
                     raise ValueError
 
-            except ValueError:
-
+            except Exception:
                 self.rprint_board()
                 rprint(
                     "[red]Please enter a valide command like [reverse]'d r10'[/]. Use [reverse]'d'[/] for [reverse]dig[/] and [reverse]'f'[/] for placing a [reverse]flag[/] followed by coordinates.[/]"
                 )
                 continue
 
-            letter, number = match.groups()
+            for mach in matches:
+                letter, number = mach.groups()
 
-            result: int = 0
-            for c in letter:
-                result = result * 26 + (ord(c) - ord("a") + 1)
-            coords: tuple[int, int] = (
-                result - 1,
-                int(number),
-            )  # -1 because we use list-based coordinates
+                result: int = 0
+                for c in letter:
+                    result = result * 26 + (ord(c) - ord("a") + 1)
+                coords: tuple[int, int] = (
+                    result - 1,
+                    int(number),
+                )  # -1 because we use list-based coordinates
 
-            if command == "d":
-                board.dig(*coords)
-            elif command == "f":
-                board.flag(*coords)
-            if command == "discover":
-                for i in range(len(board.mask)):
-                    for j in range(len(board.mask[i])):
-                        board.mask[i][j] = 0
+                if command in ("d", "dig"):
+                    board.dig(*coords)
+                elif command in ("f", "flag"):
+                    board.flag(*coords)
+                elif command == "_discover":
+                    for i in range(len(board.mask)):
+                        for j in range(len(board.mask[i])):
+                            board.mask[i][j] = 0
+                elif command == "_flag":
+                    board.flags = board.mines
 
-            if board.board[coords[1]][coords[0]] == -1 and command == "d":
-                for mine in board.mines:
-                    board.mask[mine[1]][mine[0]] = 0
+                if board.board[coords[1]][coords[0]] == -1 and command == "d":
+                    for mine in board.mines:
+                        board.mask[mine[1]][mine[0]] = 0
 
-                self.rprint_board()
+                    self.rprint_board()
 
-                rprint("[red]GAME OVER[/]", end="")
-                console.input()
-                return True
+                    rprint("[red]GAME OVER[/]", end="")
+                    console.input()
+                    return True
+
+                elif board.flags == board.mines:  # very crude win condition
+                    self.rprint_board()
+                    rprint("[green]YOU WIN[/]", end="")
+                    console.input()
+                    return True
 
             self.rprint_board()
 
@@ -162,12 +182,14 @@ if __name__ == "__main__":
             width = int(x)
             height = int(y)
         except ValueError:
-            width = console.width // 3 - 1
-            height = console.height - 3
+            # Each rendered row uses 4 chars for the index plus 3 chars per cell.
+            # Keep a small right margin so rows never wrap in narrow terminals.
+            width = max(1, (console.width - 5) // 3)
+            height = console.height - 4
             # //3 becuse of the two " " buffers in between each char
             # -1 because of margin (and the numbers on the left side)
             # -3 because we NEED -2 for the out- and input and then -1 for margin
-        
+
         total_tiles: int = width * height
         mine_density: float = 0.05 * math.log2(total_tiles / 9)
         min_mines: int = 1
@@ -177,3 +199,4 @@ if __name__ == "__main__":
 
         g = Game(width, height, mine_count)
         play_again = g.main()
+        g.clear()
